@@ -1,4 +1,5 @@
 import scrapy
+import logging
 
 class NewsSpider(scrapy.Spider):
   name = "news"
@@ -6,18 +7,24 @@ class NewsSpider(scrapy.Spider):
     "https://en.wikipedia.org/wiki/Portal:Current_events",
   ]
 
-  def parse(self, response):
-    overview_text = "//td[@style='vertical-align:top;']"
-    dates = response.xpath(overview_text + "/table[@class='vevent']")
-    date_count = len(dates)
-    overview = response.xpath(overview_text + "/table[1]")
-    for date in range(date_count):
-      subjects = dates[date].xpath(".//tr[2]/td/dl")
-      subject_count = len(subjects)
-      for subject in range(subject_count):
-        events = subjects[subject].xpath(".//ul")
-        event_count = len(events)
-        for event in range(event_count):
-          specs = events[event].xpath(".//li")
-          spec_count = len(specs)
+  logging.basicConfig(filename='news_spider.log', level=logging.INFO)
 
+  def parse(self, response):
+    summaries = response.xpath("//table[@class='vevent']")
+
+    portal = {}
+    for summary in summaries:
+      # TODO: parse date
+      date = summary.xpath(".//span[@class='summary']").extract()
+
+      descriptions = summary.xpath("descendant::td[@class='description']")
+      for desc in descriptions.xpath("descendant::dl"):
+        subject = desc.xpath(".//dt").extract_first()
+
+        headlines = []
+        for headline in desc.xpath("following-sibling::ul"):
+          situ = headline.xpath(".//li").extract_first()
+          headlines.append(situ)
+
+        portal[subject] = headlines
+    yield portal

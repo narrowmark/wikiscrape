@@ -1,5 +1,7 @@
 *.log
 *.pyc
 *.swp
+*.swn
+*.swo
 tmp.jl
 tmp.json
