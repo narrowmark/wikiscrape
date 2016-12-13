@@ -19,6 +19,13 @@ class NewsSpider(scrapy.Spider):
 
     return str(month) + " " + str(day) + ", " + str(year)
 
+  def event_parse(self, event):
+    exclude_external = ".//a[not(contains(@class, 'external text'))]"
+    plain = ""
+    for line in event.xpath(exclude_external + "/text()|text()"):
+      plain += line.extract()
+    return plain
+
   def parse(self, response):
     summaries = response.xpath("//table[@class='vevent']")
 
@@ -27,7 +34,7 @@ class NewsSpider(scrapy.Spider):
       # Getting the constellation of date elements; compartmentalizes changes
       # to date_parse()
       date = summary.xpath(".//span[@class='summary']")[0]
-      logging.info("DATE: " + self.date_parse(date))
+      # logging.info("DATE: " + self.date_parse(date))
 
       descriptions = summary.xpath("descendant::td[@class='description']")
       for desc in descriptions.xpath("descendant::dl"):
@@ -35,8 +42,8 @@ class NewsSpider(scrapy.Spider):
 
         headlines = []
         for headline in desc.xpath("following-sibling::ul"):
-          situ = headline.xpath(".//li").extract_first()
-          headlines.append(situ)
+          event = headline.xpath(".//li").extract_first()
+          headlines.append(event)
 
         portal[subject] = headlines
     yield portal
