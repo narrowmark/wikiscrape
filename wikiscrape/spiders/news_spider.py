@@ -1,5 +1,6 @@
 import scrapy
 import logging
+import re
 
 class NewsSpider(scrapy.Spider):
   name = "news"
@@ -9,13 +10,24 @@ class NewsSpider(scrapy.Spider):
 
   logging.basicConfig(filename='news_spider.log', level=logging.INFO)
 
+  def date_parse(self, date):
+    date_list = date.xpath(".//text()").extract()
+
+    date_list = re.findall(r'(?u)\w+', date_list[1])
+    date_list = [x.encode('utf-8') for x in date_list]
+    month, day, year = date_list[0], date_list[1], date_list[2]
+
+    return str(month) + " " + str(day) + ", " + str(year)
+
   def parse(self, response):
     summaries = response.xpath("//table[@class='vevent']")
 
     portal = {}
     for summary in summaries:
-      # TODO: parse date
-      date = summary.xpath(".//span[@class='summary']").extract()
+      # Getting the constellation of date elements; compartmentalizes changes
+      # to date_parse()
+      date = summary.xpath(".//span[@class='summary']")[0]
+      logging.info("DATE: " + self.date_parse(date))
 
       descriptions = summary.xpath("descendant::td[@class='description']")
       for desc in descriptions.xpath("descendant::dl"):
