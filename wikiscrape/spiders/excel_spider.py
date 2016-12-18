@@ -38,6 +38,7 @@ class ExcelOutputSpider(scrapy.Spider):
 
   def parse(self, response):
     summaries = response.xpath("//table[@class='vevent']")
+    # dict of the form { headline: [most_recent, first, count] }
     current = {}
 
     for summary in summaries:
@@ -50,5 +51,11 @@ class ExcelOutputSpider(scrapy.Spider):
           if parsed == []:
             continue
 
-          logging.info("HEAD: " + parsed[0])
-          logging.info("BODY: " + parsed[1] + "\n")
+          #logging.info("HEAD: " + parsed[0])
+          #logging.info("BODY: " + parsed[1] + "\n")
+
+          if current.has_key(parsed[0]) == false:
+            current[parsed[0]] = [date, date, 1]
+          else:
+            current[parsed[0]][1] = date
+            current[parsed[0]][2] += 1
