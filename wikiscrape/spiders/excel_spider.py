@@ -20,19 +20,21 @@ class ExcelOutputSpider(scrapy.Spider):
     return month + " " + day + ", " + year
 
   def headline_parse(self, event):
-    # Dump external links
-    exclude_external = ".//a[not(contains(@class, 'external text'))]"
+    # Query for removing external links
+    not_external = ".//a[not(contains(@class, 'external text'))]"
 
     # Only return ongoing events
-    if re.findall(r'a.*</a>\n', event.extract()) == []:
-      return ""
+    if re.findall(r'<li><a.*</a>\n', event.extract()) == []:
+      return []
 
-    plain = ""
-    # for line in event.xpath(exclude_external + "/text()|text()"):
-    #  plain += line.extract()[0]
-    plain += event.xpath(exclude_external + "/text()|text()")[0].extract()
-    logging.info("PLAIN:" + plain)
-    return plain
+    head = event.xpath(not_external + "/text()|text()")[0].extract()
+    event = event.xpath(".//li/text()|" + not_external +
+                        "/text()").extract()
+    body = ""
+    for line in event[1:]:
+      body += line
+
+    return [head, body]
 
   def parse(self, response):
     summaries = response.xpath("//table[@class='vevent']")
@@ -45,10 +47,8 @@ class ExcelOutputSpider(scrapy.Spider):
       for desc in descriptions:
         for headline in desc.xpath("child::ul/li"):
           parsed = self.headline_parse(headline)
-          if parsed != "":
-            logging.info("PARSED: " + parsed)
-          if headline.xpath(".//a/text()").extract_first() is None:
-            logging.info("EVENT?! NOTHING TO REPORT!")
+          if parsed == []:
             continue
 
-          #logging.info("EVENT!!:" + headline.xpath(".//a/text()").extract_first())
+          logging.info("HEAD: " + parsed[0])
+          logging.info("BODY: " + parsed[1] + "\n")
