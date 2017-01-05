@@ -2,6 +2,9 @@
 *.pyc
 *.swp
 *.swn
+*.swm
 *.swo
+*.xlsx
+*.xlsx*
 tmp.jl
 tmp.json

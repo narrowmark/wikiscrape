@@ -1,5 +1,6 @@
 import scrapy
 import re
+import openpyxl
 import logging
 
 class ExcelOutputSpider(scrapy.Spider):
@@ -10,7 +11,19 @@ class ExcelOutputSpider(scrapy.Spider):
 
   logging.basicConfig(filename="excel.log", level=logging.INFO)
 
+  def open_or_create_sheet(self):
+    try:
+      self.wb = openpyxl.load_workbook('events.xlsx')
+    except IOError:
+      self.wb = openpyxl.Workbook()
+
+    self.sheet = self.wb.active
+    self.sheet.title = "CurrentEvents"
+    self.wb.save('events.xlsx')
+
   def date_parse(self, date):
+    self.open_or_create_sheet()
+
     date_list = date.xpath(".//text()").extract()
 
     date_list = re.findall(r'(?u)\w+', date_list[1])
@@ -43,6 +56,7 @@ class ExcelOutputSpider(scrapy.Spider):
 
     for summary in summaries:
       date = summary.xpath(".//span[@class='summary']")[0]
+      date = self.date_parse(date)
 
       descriptions = summary.xpath("descendant::td[@class='description']")
       for desc in descriptions:
@@ -54,8 +68,18 @@ class ExcelOutputSpider(scrapy.Spider):
           #logging.info("HEAD: " + parsed[0])
           #logging.info("BODY: " + parsed[1] + "\n")
 
-          if current.has_key(parsed[0]) == false:
+          if current.has_key(parsed[0]) == False:
             current[parsed[0]] = [date, date, 1]
           else:
             current[parsed[0]][1] = date
             current[parsed[0]][2] += 1
+
+      #logging.info("CURRENT: " + str(current))
+
+      # Populating the spreadsheet
+      for e, i in zip(current, range(len(current))):
+        self.sheet.cell(row=i+1, column=1).value = e
+        self.sheet.cell(row=i+1, column=2).value = current[e][0]
+        self.sheet.cell(row=i+1, column=3).value = current[e][1]
+        self.sheet.cell(row=i+1, column=4).value = current[e][2]
+      self.wb.save('events.xlsx')
