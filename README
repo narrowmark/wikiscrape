@@ -6,6 +6,7 @@ analyzing the content to get a general sense of what is happening in the world.
 
 Status
 ------
-Experimenting with XPath axes for more efficient navigation of markup tags. The
-output at the moment is mostly for demonstration purposes and needs to be
-modified for actual presentation later.
+- Needs update to scrape beyond Current Events portal.
+- Needs means of gathering relevant links instead of just plain text.
+- Possible reorganization of support code (e.g., event_parser()) to other files.
+- Export to JSON, CSV, etc.
